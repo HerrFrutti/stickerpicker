@@ -1,0 +1,1 @@
+if you have animated png's just add the tag '--animated 1' and it will do the magic.
