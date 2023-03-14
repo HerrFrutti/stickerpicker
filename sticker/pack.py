@@ -22,6 +22,8 @@ import asyncio
 import string
 import json
 
+is_animated = 0
+
 try:
     import magic
 except ImportError:
@@ -46,13 +48,16 @@ async def upload_sticker(file: str, directory: str, old_stickers: Dict[str, matr
     path = os.path.join(directory, file)
     if not os.path.isfile(path):
         return None
-
-    if magic:
-        mime = magic.from_file(path, mime=True)
+    
+    if is_animated:
+        mime = "image/gif"
     else:
-        mime, _ = mimetypes.guess_type(file)
-    if not mime.startswith("image/"):
-        return None
+        if magic:
+            mime = magic.from_file(path, mime=True)
+        else:
+            mime, _ = mimetypes.guess_type(file)
+        if not mime.startswith("image/"):
+            return None      
 
     print(f"Processing {file}", end="", flush=True)
     try:
@@ -77,11 +82,11 @@ async def upload_sticker(file: str, directory: str, old_stickers: Dict[str, matr
         }
         print(f".. using existing upload")
     else:
-        image_data, width, height = util.convert_image(image_data)
+        width, height = util.convert_image(image_data)
         print(".", end="", flush=True)
-        mxc = await matrix.upload(image_data, "image/png", file)
+        mxc = await matrix.upload(image_data, mime, file)
         print(".", end="", flush=True)
-        sticker = util.make_sticker(mxc, width, height, len(image_data), name)
+        sticker = util.make_sticker(mxc, width, height, len(image_data), mime, name)
         sticker["id"] = sticker_id
         print(" uploaded", flush=True)
     return sticker
@@ -124,7 +129,6 @@ async def main(args: argparse.Namespace) -> None:
         print(f"Copied pack to {picker_pack_path}")
         util.add_to_index(picker_file_name, args.add_to_index)
 
-
 parser = argparse.ArgumentParser()
 parser.add_argument("--config",
                     help="Path to JSON file with Matrix homeserver and access_token",
@@ -134,6 +138,10 @@ parser.add_argument("--title", help="Override the sticker pack displayname", typ
 parser.add_argument("--id", help="Override the sticker pack ID", type=str, metavar="id")
 parser.add_argument("--add-to-index", help="Sticker picker pack directory (usually 'web/packs/')",
                     type=str, metavar="path")
+
+parser.add_argument("--animated", help="Sticker is animated. Default=0",
+                    type=int, default=0)
+
 parser.add_argument("path", help="Path to the sticker pack directory", type=str)
 
 
@@ -142,4 +150,6 @@ def cmd():
 
 
 if __name__ == "__main__":
+    is_animated = args.animated
+    print(is_animated)
     cmd()
