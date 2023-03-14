@@ -1,7 +1,6 @@
 {
   "packs": [
-    "FrankerFacez.json",
-    "bttv.json"
+    "FrankerFacez.json"
   ],
   "homeserver_url": "https://chat.vegan-home.de"
 }
